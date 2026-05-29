@@ -3,7 +3,7 @@ let expiredAt = null;
 let endpoint = null;
 let clientId = "76a75279-2ffa-4c3d-8db8-7b47252aa41c";
 
-const API_KEY = globalThis.API_KEY;
+let API_KEY = null;
 
 // 添加缓存和预刷新机制
 const TOKEN_REFRESH_BEFORE_EXPIRY = 5 * 60; // 提前5分钟刷新token
@@ -23,9 +23,12 @@ const VOICE_MAPPING = {
     'shimmer': 'zh-CN-XiaomengNeural'
 };
 
-addEventListener("fetch", event => {
-    event.respondWith(handleRequest(event.request));
-});
+export default {
+  async fetch(request, env, ctx) {
+    API_KEY = env.API_KEY;
+    return handleRequest(request);
+  }
+};
 
 async function handleRequest(request) {
     if (request.method === "OPTIONS") {
