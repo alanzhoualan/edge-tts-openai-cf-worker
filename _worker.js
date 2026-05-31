@@ -73,7 +73,8 @@ async function handleRequest(request) {
                 response_format = "mp3",
                 speed = 1.0,
                 pitch = 1.0,
-                style = "general"
+                style = "general",
+                volume = "100"
             } = requestBody;
 
             // 添加语音名称映射
@@ -88,7 +89,8 @@ async function handleRequest(request) {
                 numPitch,
                 style,
                 "audio-24khz-48kbitrate-mono-mp3",
-                false
+                false,
+                volume
             );
 
             return response;
@@ -127,7 +129,7 @@ async function handleOptions(request) {
     });
 }
 
-async function getVoice(text, voiceName = "zh-CN-XiaoxiaoNeural", rate = 0, pitch = 0, style = "general", outputFormat = "audio-24khz-48kbitrate-mono-mp3", download = false) {
+async function getVoice(text, voiceName = "zh-CN-XiaoxiaoNeural", rate = 0, pitch = 0, style = "general", outputFormat = "audio-24khz-48kbitrate-mono-mp3", download = false, volume = "100") {
     try {
         const maxChunkSize = 2000; // 假设每次请求的最大文本长度为2000字符
         const chunks = [];
@@ -139,7 +141,7 @@ async function getVoice(text, voiceName = "zh-CN-XiaoxiaoNeural", rate = 0, pitc
         }
 
         // 获取每个分段的音频
-        const audioChunks = await Promise.all(chunks.map(chunk => getAudioChunk(chunk, voiceName, rate, pitch, style, outputFormat)));
+        const audioChunks = await Promise.all(chunks.map(chunk => getAudioChunk(chunk, voiceName, rate, pitch, style, outputFormat, volume)));
 
         // 将音频片段拼接起来
         const concatenatedAudio = new Blob(audioChunks, { type: 'audio/mpeg' });
@@ -177,7 +179,7 @@ async function getVoice(text, voiceName = "zh-CN-XiaoxiaoNeural", rate = 0, pitc
 
 
 //获取单个音频数据
-async function getAudioChunk(text, voiceName, rate, pitch, style, outputFormat) {
+async function getAudioChunk(text, voiceName, rate, pitch, style, outputFormat, volume) {
     const endpoint = await getEndpoint();
     const url = `https://${endpoint.r}.tts.speech.microsoft.com/cognitiveservices/v1`;
 
@@ -189,7 +191,7 @@ async function getAudioChunk(text, voiceName, rate, pitch, style, outputFormat) 
             "User-Agent": "okhttp/4.5.0",
             "X-Microsoft-OutputFormat": outputFormat
         },
-        body: getSsml(text, voiceName, rate, pitch, style)
+        body: getSsml(text, voiceName, rate, pitch, style, volume)
     });
 
     if (!response.ok) {
@@ -200,15 +202,14 @@ async function getAudioChunk(text, voiceName, rate, pitch, style, outputFormat) 
     return response.blob();
 }
 
-function getSsml(text, voiceName, rate, pitch,style) {
+function getSsml(text, voiceName, rate, pitch, style, volume) {
     return `<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" version="1.0" xml:lang="zh-CN"> 
                 <voice name="${voiceName}"> 
                     <mstts:express-as style="${style}"  styledegree="1.0" role="default" > 
-                        <prosody rate="${rate}%" pitch="${pitch}%" volume="50">${text}</prosody> 
+                        <prosody rate="${rate}%" pitch="${pitch}%" volume="${volume}">${text}</prosody> 
                     </mstts:express-as> 
                 </voice> 
             </speak>`;
-
 }
 
 // 优化 getEndpoint 函数
